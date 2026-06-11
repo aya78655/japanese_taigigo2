@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>対義語クイズ（入力式）</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', 'Meiryo', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px 28px;
+      max-width: 540px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      color: #4a3080;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    /* Progress */
+    .progress-bar-wrap {
+      background: #eee;
+      border-radius: 10px;
+      height: 8px;
+      margin-bottom: 8px;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.4s ease;
+    }
+    .progress-text {
+      text-align: right;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    /* Question card */
+    .question-card {
+      background: #f7f4ff;
+      border-radius: 14px;
+      padding: 24px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .question-label {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+    .question-word {
+      font-size: 2.4rem;
+      font-weight: bold;
+      color: #4a3080;
+      margin-bottom: 6px;
+    }
+    .question-reading {
+      font-size: 0.95rem;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .question-meaning {
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.5;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    /* Hint */
+    .hint-btn {
+      background: none;
+      border: 1.5px dashed #aaa;
+      color: #888;
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+    .hint-btn:hover { border-color: #764ba2; color: #764ba2; }
+    .hint-area {
+      font-size: 0.85rem;
+      color: #764ba2;
+      background: #f0eaff;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 14px;
+      display: none;
+      line-height: 1.6;
+    }
+    .hint-area.visible { display: block; }
+
+    /* Input */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .answer-input {
+      flex: 1;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 1.2rem;
+      outline: none;
+      transition: border-color 0.2s;
+      color: #333;
+    }
+    .answer-input:focus { border-color: #764ba2; }
+    .answer-input.correct { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+    .answer-input.wrong   { border-color: #ef4444; background: #fef2f2; color: #b91c1c; }
+    .answer-input:disabled { opacity: 1; }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .submit-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* Feedback */
+    .feedback {
+      text-align: center;
+      font-size: 1rem;
+      font-weight: bold;
+      min-height: 44px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .feedback.correct-fb { background: #f0fdf4; color: #15803d; }
+    .feedback.wrong-fb   { background: #fef2f2; color: #b91c1c; }
+
+    /* Answer reveal */
+    .answer-reveal {
+      font-size: 0.88rem;
+      color: #555;
+      background: #f7f4ff;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: none;
+      line-height: 1.7;
+    }
+    .answer-reveal.visible { display: block; }
+    .answer-reveal strong { color: #4a3080; font-size: 1rem; }
+
+    /* Next */
+    .next-btn {
+      display: none;
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .next-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Score screen */
+    .score-screen { text-align: center; display: none; }
+    .score-emoji { font-size: 4rem; margin-bottom: 12px; }
+    .score-num { font-size: 2.5rem; font-weight: bold; color: #4a3080; margin-bottom: 8px; }
+    .score-msg { font-size: 1rem; color: #555; margin-bottom: 20px; line-height: 1.6; }
+    .score-breakdown {
+      font-size: 0.82rem;
+      color: #666;
+      background: #f7f4ff;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: left;
+      margin-bottom: 24px;
+      line-height: 2;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .score-breakdown .wrong-row { color: #b91c1c; }
+    .restart-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 32px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .restart-btn:hover { opacity: 0.9; }
+
+    .quiz-body {}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>✏️ 対義語クイズ</h1>
+  <p class="subtitle">対義語を漢字で入力しよう！</p>
+
+  <div class="quiz-body" id="quizBody">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText"></div>
+
+    <div class="question-card">
+      <div class="question-label">この言葉の対義語は？</div>
+      <div class="question-word" id="qWord"></div>
+      <div class="question-reading" id="qReading"></div>
+      <div class="question-meaning" id="qMeaning"></div>
+    </div>
+
+    <div style="text-align:center; margin-bottom:8px;">
+      <button class="hint-btn" id="hintBtn" onclick="showHint()">💡 ヒントを見る</button>
+    </div>
+    <div class="hint-area" id="hintArea"></div>
+
+    <div class="input-row">
+      <input
+        class="answer-input"
+        id="answerInput"
+        type="text"
+        placeholder="漢字で入力してください"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button class="submit-btn" id="submitBtn" onclick="checkAnswer()">答える</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="answer-reveal" id="answerReveal"></div>
+
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">次の問題へ →</button>
+  </div>
+
+  <div class="score-screen" id="scoreScreen">
+    <div class="score-emoji" id="scoreEmoji"></div>
+    <div class="score-num" id="scoreNum"></div>
+    <div class="score-msg" id="scoreMsg"></div>
+    <div class="score-breakdown" id="scoreBreakdown"></div>
+    <button class="restart-btn" onclick="restartQuiz()">もう一度やる 🔄</button>
+  </div>
+</div>
+
+<script>
+const allPairs = [
+  { a: { word: '主観', reading: 'しゅかん', meaning: '自分ひとりのものの見方。自分の考え。' },
+    b: { word: '客観', reading: 'きゃっかん', meaning: '第三者の観点。ほかの人の立場でみること。' } },
+  { a: { word: '抽象', reading: 'ちゅうしょう', meaning: '二つ以上のものに共通する性質を抜き出すこと。' },
+    b: { word: '具体', reading: 'ぐたい', meaning: '形や内容がはっきり分かること。' } },
+  { a: { word: '絶対', reading: 'ぜったい', meaning: '他に比較するものがないこと。くらべるものがない。' },
+    b: { word: '相対', reading: 'そうたい', meaning: '他との関係の上に成立していること。くらべるものがある。' } },
+  { a: { word: '画一', reading: 'かくいつ', meaning: '個々の性質を考えず、全体を一様にそろえること。みんな同じ。' },
+    b: { word: '多様', reading: 'たよう', meaning: 'いろいろと種類のちがったものがあること。' } },
+  { a: { word: '目的', reading: 'もくてき', meaning: '実現しようとしてめざす事柄。行動のねらい。めあて。' },
+    b: { word: '手段', reading: 'しゅだん', meaning: 'ある事を実現させるためにとる方法。てだて。' } },
+  { a: { word: '質問', reading: 'しつもん', meaning: 'わからないところや疑わしい点について問い正すこと。' },
+    b: { word: '回答', reading: 'かいとう', meaning: '質問・要求などに答えること。また、その答え。' } },
+  { a: { word: '素人', reading: 'しろうと', meaning: 'その事に経験が浅く、未熟な人。アマチュア。' },
+    b: { word: '玄人', reading: 'くろうと', meaning: '技芸などに熟達した人。専門家。プロ。' } },
+  { a: { word: '過剰', reading: 'かじょう', meaning: '必要な程度や数量を越えて多いこと。ありあまること。' },
+    b: { word: '不足', reading: 'ふそく', meaning: '足りないこと。十分でないこと。' } },
+  { a: { word: '本音', reading: 'ほんね', meaning: '本心からいう言葉。' },
+    b: { word: '建前', reading: 'たてまえ', meaning: '原則として立てている方針。表向きの考え。' } },
+  { a: { word: '容易', reading: 'ようい', meaning: 'たやすいこと。やさしいこと。' },
+    b: { word: '困難', reading: 'こんなん', meaning: '物事をするのが非常にむずかしいこと。' } },
+  { a: { word: '権利', reading: 'けんり', meaning: '自分の意志によって自由に行ったり、他人に要求したりすることのできる資格・能力。' },
+    b: { word: '義務', reading: 'ぎむ', meaning: '人がそれぞれの立場に応じて当然しなければならない務め。' } },
+  { a: { word: '公', reading: 'おおやけ', meaning: '個人の立場を離れて全体にかかわること。社会。公共。' },
+    b: { word: '私', reading: 'わたくし', meaning: '自分一人に関係のあること。個人的なこと。' } },
+  { a: { word: '真', reading: 'しん', meaning: 'うそや偽りでないこと。本当。真実。ほんもの。' },
+    b: { word: '偽', reading: 'ぎ', meaning: 'いつわり。' } },
+];
+
+let questions = [];
+let current = 0;
+let score = 0;
+let results = []; // { question, answer, userAnswer, correct }
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQuestions() {
+  let qs = [];
+  for (const pair of allPairs) {
+    qs.push({ question: pair.a, answer: pair.b });
+    qs.push({ question: pair.b, answer: pair.a });
+  }
+  return shuffle(qs).slice(0, 13);
+}
+
+function normalize(str) {
+  // 全角スペース・半角スペース除去、全角英数→半角
+  return str.trim()
+    .replace(/　/g, '')
+    .replace(/\s/g, '')
+    .normalize('NFKC');
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = questions[current];
+  const total = questions.length;
+
+  document.getElementById('progressBar').style.width = ((current / total) * 100) + '%';
+  document.getElementById('progressText').textContent = `${current + 1} / ${total} 問`;
+
+  document.getElementById('qWord').textContent = q.question.word;
+  document.getElementById('qReading').textContent = `（${q.question.reading}）`;
+  document.getElementById('qMeaning').textContent = q.question.meaning;
+
+  // Hint: reading of answer
+  const hintArea = document.getElementById('hintArea');
+  hintArea.innerHTML = `読み仮名：<strong>「${q.answer.reading}」</strong>`;
+  hintArea.classList.remove('visible');
+  document.getElementById('hintBtn').style.display = '';
+
+  const input = document.getElementById('answerInput');
+  input.value = '';
+  input.className = 'answer-input';
+  input.disabled = false;
+  input.placeholder = '漢字で入力してください';
+  input.focus();
+
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('answerReveal').classList.remove('visible');
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+function showHint() {
+  document.getElementById('hintArea').classList.add('visible');
+  document.getElementById('hintBtn').style.display = 'none';
+}
+
+function checkAnswer() {
+  if (answered) return;
+  const input = document.getElementById('answerInput');
+  const userRaw = input.value;
+  if (!userRaw.trim()) { input.focus(); return; }
+
+  answered = true;
+  input.disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('hintBtn').style.display = 'none';
+
+  const q = questions[current];
+  const correct = normalize(q.answer.word);
+  const user = normalize(userRaw);
+
+  const isCorrect = user === correct;
+  if (isCorrect) score++;
+
+  results.push({ question: q.question.word, answer: q.answer.word, userAnswer: userRaw.trim(), correct: isCorrect });
+
+  const feedback = document.getElementById('feedback');
+  const reveal = document.getElementById('answerReveal');
+
+  if (isCorrect) {
+    input.classList.add('correct');
+    feedback.textContent = '⭕ 正解！すばらしい！';
+    feedback.className = 'feedback correct-fb';
+  } else {
+    input.classList.add('wrong');
+    feedback.textContent = `❌ 不正解… 正解は「${q.answer.word}」でした`;
+    feedback.className = 'feedback wrong-fb';
+  }
+
+  reveal.innerHTML = `<strong>「${q.answer.word}」（${q.answer.reading}）</strong>とは…<br>${q.answer.meaning}`;
+  reveal.classList.add('visible');
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = current + 1 < questions.length ? '次の問題へ →' : '結果を見る 🎉';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) showScore();
+  else renderQuestion();
+}
+
+function showScore() {
+  document.getElementById('quizBody').style.display = 'none';
+  const screen = document.getElementById('scoreScreen');
+  screen.style.display = 'block';
+
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+
+  let emoji, msg;
+  if (pct === 100)     { emoji = '🏆'; msg = '全問正解！完璧です！素晴らしい語彙力ですね！'; }
+  else if (pct >= 80)  { emoji = '🌟'; msg = `${pct}点！よくできました！あと少しで満点です。`; }
+  else if (pct >= 60)  { emoji = '👍'; msg = `${pct}点！なかなか良いです。もう一度挑戦してみよう！`; }
+  else if (pct >= 40)  { emoji = '📖'; msg = `${pct}点。意味を確認してもう一度チャレンジ！`; }
+  else                 { emoji = '💪'; msg = `${pct}点。難しかったですね。復習してまた挑戦しよう！`; }
+
+  document.getElementById('scoreEmoji').textContent = emoji;
+  document.getElementById('scoreNum').textContent = `${score} / ${total} 問正解（${pct}点）`;
+  document.getElementById('scoreMsg').textContent = msg;
+
+  const bd = document.getElementById('scoreBreakdown');
+  bd.innerHTML = results.map(r => {
+    const mark = r.correct ? '⭕' : '❌';
+    const cls = r.correct ? '' : 'wrong-row';
+    const userPart = r.correct ? '' : `　→ あなたの答え：「${r.userAnswer}」`;
+    return `<div class="${cls}">${mark} ${r.question} ⇔ ${r.answer}${userPart}</div>`;
+  }).join('');
+}
+
+function restartQuiz() {
+  score = 0; current = 0; results = [];
+  questions = buildQuestions();
+  document.getElementById('scoreScreen').style.display = 'none';
+  document.getElementById('quizBody').style.display = 'block';
+  renderQuestion();
+}
+
+// Enterキーで送信
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (!answered) checkAnswer();
+    else {
+      const nextBtn = document.getElementById('nextBtn');
+      if (nextBtn.style.display !== 'none') nextQuestion();
+    }
+  }
+});
+
+// Start
+questions = buildQuestions();
+renderQuestion();
+</script>
+</body>
+</html>
